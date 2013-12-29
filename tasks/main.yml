@@ -1,0 +1,144 @@
+---
+- name: Gitlab | install dependencies
+  apt: name={{ item }} state=present update_cache=yes cache_valid_time=900
+  with_items:
+    - build-essential
+    - zlib1g-dev
+    - libyaml-dev
+    - libssl-dev
+    - libgdbm-dev
+    - libreadline-dev
+    - libncurses5-dev
+    - libffi-dev
+    - curl
+    - git-core
+    - openssh-server
+    - checkinstall
+    - libxml2-dev
+    - libxslt1-dev
+    - libcurl4-openssl-dev
+    - libicu-dev
+    - python
+    - openssl
+  tags:
+    - gitlab
+
+- name: Gitlab | create {{ gitlab.git_user.comment }}
+  user: state=present
+        name={{ gitlab.git_user.name }} comment={{ gitlab.git_user.comment }}
+        home={{ gitlab.git_user.home }} groups={{ gitlab.git_user.groups }}
+        generate_ssh_key=yes
+  tags:
+    - gitlab
+
+- name: Gitlab | create {{ gitlab.git_user.comment }} .ssh directory
+  file: state=directory path={{ gitlab.git_user.home }}/.ssh owner={{ gitlab.git_user.name }} group={{ gitlab.git_user.name }} mode=700
+  tags:
+    - gitlab
+
+- name: Gitlab | create {{ gitlab.gitlab_user.comment }}
+  user: state=present
+        name={{ gitlab.gitlab_user.name }} comment={{ gitlab.gitlab_user.comment }}
+        home={{ gitlab.gitlab_user.home }} groups={{ gitlab.gitlab_user.groups }}
+        generate_ssh_key=yes
+  tags:
+    - gitlab
+
+- name: Gitlab | create {{ gitlab.gitlab_user.comment }} .ssh directory
+  file: state=directory path={{ gitlab.gitlab_user.home }}/.ssh owner={{ gitlab.gitlab_user.name }} group={{ gitlab.gitlab_user.name }} mode=700
+  tags:
+    - gitlab
+
+- name: Gitlab | Upload SSH authorized_keys for {{ gitlab.gitlab_user.comment }}.
+  copy: src=authorized_keys dest={{ gitlab.gitlab_user.home}}/.ssh/authorized_keys owner={{ gitlab.gitlab_user.name }} group={{ gitlab.gitlab_user.name }} mode=0600
+  tags:
+    - gitlab
+
+- name: Gitlab | create project directory
+  file: stet=directory path={{ gitlab.application.core.path }}
+  tags:
+    - gitlab
+
+- name: Gitlab | create project shared directory
+  file: stet=directory path={{ gitlab.application.core.path }}/shared
+  tags:
+    - gitlab
+
+- name: Gitlab | update project directory permission
+  # TODO Add dir permission
+  tags:
+    - gitlab
+
+- name: Gitlab | postgresql | ensure user does not have unnecessary privilege ({{ gitlab.application.env }} enviroment)
+  postgresql_user: name={{ gitlab.application.database.user }} password={{ application.database.password }} role_attr_flags=NOSUPERUSER,NOCREATEDB
+  sudo_user: postgres
+  when: {{ gitlab.application.database.adapter }} == "postgresql"
+  enviroment: gitlab.application.env
+  tags:
+    - gitlab
+    - postgres
+
+- name: Gitlab | postgresql | ensure {{ gitlab.application.env }} database is created
+  postgresql_db: name={{ gitlab.application.database.name }} owner={{ gitlab.application.database.user }}
+                 encoding={{ gitlab.application.database.encoding }} lc_collate={{ gitlab.application.database.locale }}
+                 lc_ctype={{ gitlab.application.database.locale }} template='template0'
+                 state=present
+  sudo_user: postgres
+  enviroment: gitlab.application.env
+  when: {{ gitlab.application.database.adapter }} == "postgresql"
+  tags:
+    - gitlab
+    - postgres
+
+- name: Gitlab | nginx | update nginx config
+  template: src=nginx.site.conf.j2 dest=/etc/nginx/sites-available/{{ project_name }} mode=0755
+  sudo: true
+  enviroment: gitlab.application.env
+  tags:
+    - gitlab
+    - nginx
+
+- name: Gitlab | nginx | enable app
+  file: src=/etc/nginx/sites-available/{{ project_name }} dest=/etc/nginx/sites-enabled/{{ project_name }} state=link
+  sudo: true
+  tags:
+    - gitlab
+    - nginx
+
+- name: Gitlab | runit | add application {{ item }} script
+  template: src=runit.application.{{ item }}.run.j2 dest=/etc/sv/gitlab-{{ item }}/run
+  sudo: true
+  with_items:
+    - web_puma
+    - web_puma_api
+    - sidekiq_main
+    - sidekiq_mail
+    - sidekiq_shell
+  tags:
+    - gitlab
+    - runit
+
+- name: Gitlab | runit | add application {{ item }} log run script
+  template: src=runit.application.{{ item }}.log.run.j2 dest=/etc/sv/gitlab-{{ item }}/log/run
+  sudo: true
+  with_items:
+    - web_puma
+    - web_puma_api
+    - sidekiq_main
+    - sidekiq_mail
+    - sidekiq_shell
+  tags:
+    - gitlab
+    - runit
+
+- name: Gitlab | runit | symlink {{ item }} dir to enable runit service
+  file: state=link src=/etc/sv/gitlab-{{ item }} dest=/etc/service/gitlab-{{ itme }}
+  with_items:
+    - web_puma
+    - web_puma_api
+    - sidekiq_main
+    - sidekiq_mail
+    - sidekiq_shell
+  tags:
+    - gitlab
+    - runit

@@ -1,0 +1,82 @@
+---
+-
+  gitlab:
+
+    production_env:
+      application:
+        database:
+          adapter: postgresql
+          user: gitlab
+          password: supersecretpassword
+          name: gitlab_production
+          role_attr_flags: NOSUPERUSER,NOCREATEDB
+          locale: "en_US.UTF-8"
+          encoding: "UTF-8"
+
+    development_env:
+      application:
+        database:
+          adapter: postgresql
+          user: gitlab
+          password: supersecretpassword
+          name: gitlab_development
+          role_attr_flags: NOSUPERUSER,CREATEDB
+          locale: "en_US.UTF-8"
+          encoding: "UTF-8"
+
+    test_env:
+      application:
+        database:
+          adapter: postgresql
+          user: gitlab
+          password: supersecretpassword
+          name: gitlab_test
+          role_attr_flags: NOSUPERUSER,CREATEDB
+          locale: "en_US.UTF-8"
+          encoding: "UTF-8"
+
+    staging_env:
+      application:
+        database:
+          adapter: postgresql
+          user: gitlab
+          password: supersecretpassword
+          name: gitlab_staging
+          role_attr_flags: NOSUPERUSER,CREATEDB
+          locale: "en_US.UTF-8"
+          encoding: "UTF-8"
+
+    git_user:
+      name: git
+      home: /var/git
+      comment: "Gitlab run user"
+      groups: 'git,gitlab'
+
+    gitlab_user:
+      name: gitlab
+      home: /home/gitlab
+      comment: "Gitlab deploy user"
+      groups: 'git,gitlab'
+
+    application:
+      env: production
+
+      database:
+        adapter: postgresql
+        user: gitlab
+        password: supersecretpassword
+        name: gitlab_production
+        role_attr_flags: NOSUPERUSER,NOCREATEDB
+
+      gitlab:
+        core:
+          path: "/rest/u/apps/gitlab"
+          run_path: "/rest/u/apps/gitlab/current"
+        satellites:
+          path: "/rest/u/apps/gitlab/shared/satellites"
+        uploads:
+          path: "/rest/u/apps/gitlab/shared/uploads"
+
+      gitlab_shell:
+        path: "/rest/u/apps/gitlab-shell"
+        run_path: "/rest/u/apps/gitlab-shell/current"
