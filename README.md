@@ -29,3 +29,7 @@ Author Information
 ------------------
 
 An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/zzet/ansible-gitlab-role/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
