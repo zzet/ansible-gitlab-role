@@ -23,6 +23,7 @@
   tags:
     - gitlab
 
+  # /var/git
 - name: Gitlab | create {{ gitlab.git_user.comment }}
   user: state=present
         name={{ gitlab.git_user.name }} comment={{ gitlab.git_user.comment }}
@@ -31,11 +32,13 @@
   tags:
     - gitlab
 
+  # /var/git/.ssh
 - name: Gitlab | create {{ gitlab.git_user.comment }} .ssh directory
   file: state=directory path={{ gitlab.git_user.home }}/.ssh owner={{ gitlab.git_user.name }} group={{ gitlab.git_user.name }} mode=700
   tags:
     - gitlab
 
+  # /home/gitlab
 - name: Gitlab | create {{ gitlab.gitlab_user.comment }}
   user: state=present
         name={{ gitlab.gitlab_user.name }} comment={{ gitlab.gitlab_user.comment }}
@@ -44,28 +47,27 @@
   tags:
     - gitlab
 
+  # /home/gitlab/.ssh
 - name: Gitlab | create {{ gitlab.gitlab_user.comment }} .ssh directory
   file: state=directory path={{ gitlab.gitlab_user.home }}/.ssh owner={{ gitlab.gitlab_user.name }} group={{ gitlab.gitlab_user.name }} mode=700
   tags:
     - gitlab
 
+  # /home/gitlab/.ssh/authorized_keys
 - name: Gitlab | Upload SSH authorized_keys for {{ gitlab.gitlab_user.comment }}.
   copy: src=authorized_keys dest={{ gitlab.gitlab_user.home}}/.ssh/authorized_keys owner={{ gitlab.gitlab_user.name }} group={{ gitlab.gitlab_user.name }} mode=0600
   tags:
     - gitlab
 
+  # /rest/u/apps/gitlab
 - name: Gitlab | create project directory
-  file: stet=directory path={{ gitlab.application.core.path }}
+  file: state=directory path={{ gitlab.application.core.path }} owner={{ gitlab.gitlab_user.name }} group={{ gitlab.gitlab_user.name }}
   tags:
     - gitlab
 
+  # /rest/u/apps/gitlab/shared
 - name: Gitlab | create project shared directory
-  file: stet=directory path={{ gitlab.application.core.path }}/shared
-  tags:
-    - gitlab
-
-- name: Gitlab | update project directory permission
-  # TODO Add dir permission
+  file: state=directory path={{ gitlab.application.core.path }}/shared owner={{ gitlab.git_user.name }} group={{ gitlab.gitlab_user.name }}
   tags:
     - gitlab
 
@@ -106,7 +108,7 @@
     - nginx
 
 - name: Gitlab | runit | add application {{ item }} script
-  template: src=runit.application.{{ item }}.run.j2 dest=/etc/sv/gitlab-{{ item }}/run
+  template: src=runit/gitlab.{{ item }}.run.j2 dest=/etc/sv/gitlab-{{ item }}/run
   sudo: true
   with_items:
     - web_puma
@@ -119,7 +121,7 @@
     - runit
 
 - name: Gitlab | runit | add application {{ item }} log run script
-  template: src=runit.application.{{ item }}.log.run.j2 dest=/etc/sv/gitlab-{{ item }}/log/run
+  template: src=runit/gitlab.{{ item }}.log.run.j2 dest=/etc/sv/gitlab-{{ item }}/log/run
   sudo: true
   with_items:
     - web_puma

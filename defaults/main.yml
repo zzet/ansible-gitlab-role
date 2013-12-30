@@ -9,9 +9,11 @@
           user: gitlab
           password: supersecretpassword
           name: gitlab_production
-          role_attr_flags: NOSUPERUSER,NOCREATEDB
+          role_attr_flags: "NOSUPERUSER,NOCREATEDB"
           locale: "en_US.UTF-8"
           encoding: "UTF-8"
+        nginx:
+          server_name: "gitlab.production.host"
 
     development_env:
       application:
@@ -20,7 +22,7 @@
           user: gitlab
           password: supersecretpassword
           name: gitlab_development
-          role_attr_flags: NOSUPERUSER,CREATEDB
+          role_attr_flags: "NOSUPERUSER,CREATEDB"
           locale: "en_US.UTF-8"
           encoding: "UTF-8"
 
@@ -31,7 +33,7 @@
           user: gitlab
           password: supersecretpassword
           name: gitlab_test
-          role_attr_flags: NOSUPERUSER,CREATEDB
+          role_attr_flags: "NOSUPERUSER,CREATEDB"
           locale: "en_US.UTF-8"
           encoding: "UTF-8"
 
@@ -42,9 +44,11 @@
           user: gitlab
           password: supersecretpassword
           name: gitlab_staging
-          role_attr_flags: NOSUPERUSER,CREATEDB
+          role_attr_flags: "NOSUPERUSER,CREATEDB"
           locale: "en_US.UTF-8"
           encoding: "UTF-8"
+        nginx:
+          server_name: "gitlab.staging.host"
 
     git_user:
       name: git
@@ -61,22 +65,27 @@
     application:
       env: production
 
-      database:
-        adapter: postgresql
-        user: gitlab
-        password: supersecretpassword
-        name: gitlab_production
-        role_attr_flags: NOSUPERUSER,NOCREATEDB
+      #database:
+        #adapter: postgresql
+        #user: gitlab
+        #password: supersecretpassword
+        #name: gitlab_production
+        #role_attr_flags: NOSUPERUSER,NOCREATEDB
 
       gitlab:
-        core:
-          path: "/rest/u/apps/gitlab"
-          run_path: "/rest/u/apps/gitlab/current"
-        satellites:
-          path: "/rest/u/apps/gitlab/shared/satellites"
-        uploads:
-          path: "/rest/u/apps/gitlab/shared/uploads"
+        base_path:        "/rest/u/apps/gitlab"
+        releases_path:    "/rest/u/apps/gitlab/releases"
+        run_path:         "/rest/u/apps/gitlab/current"
+        shared_path:      "/rest/u/apps/gitlab/shared"
+        satellites_path:  "/rest/u/apps/gitlab/shared/gitlab-satellites"
+        uploads_path:     "/rest/u/apps/gitlab/shared/uploads"
+        log_path:         "/rest/u/apps/gitlab/shared/log"
+        system_path:      "/rest/u/apps/gitlab/shared/system"
+        pids_path:        "/rest/u/apps/gitlab/shared/pids"
+        web_port:         9000
+        api_port:         9001
 
       gitlab_shell:
-        path: "/rest/u/apps/gitlab-shell"
-        run_path: "/rest/u/apps/gitlab-shell/current"
+        base_path:        "/rest/u/apps/gitlab-shell"
+        releases_path:    "/rest/u/apps/gitlab-shell/releases"
+        run_path:         "/rest/u/apps/gitlab-shell/current"

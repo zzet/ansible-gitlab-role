@@ -1,0 +1,81 @@
+upstream gitlab {
+  server 127.0.0.1:9000 fail_timeout=0;
+}
+
+upstream gitlab-api {
+  server 127.0.0.1:9001 fail_timeout=0;
+}
+
+server {
+  server_name {{ gitlab.nginx.server_name }};
+  listen 80 default;
+  access_log /var/log/nginx/gitlab.access.log;
+  error_log /var/log/nginx/gitlab.error.log;
+  location / {
+    rewrite ^ https://{{ gitlab.nginx.server_name }}$uri permanent;
+  }
+}
+
+
+server {
+  listen 443 ssl;
+
+  server_name {{ gitlab.nginx.server_name }};
+
+  access_log /var/log/nginx/gitlab.access.log;
+  error_log /var/log/nginx/gitlab.error.log;
+
+  ssl_protocols  SSLv3 TLSv1;
+  ssl_certificate /etc/nginx/ssl/{{ gitlab.nginx.server_name }}.pem;
+  ssl_certificate_key /etc/nginx/ssl/{{ gitlab.nginx.server_name }}.key;
+
+  gzip on;
+  gzip_comp_level 9;
+  gzip_min_length 1000;
+  gzip_types text/css image/png image/gif image/jpeg application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+  gzip_disable msie6;
+
+  root {{ gitlab.application.gitlab.run_path }}/public;
+
+  client_max_body_size 4G;
+
+  client_body_buffer_size 128k;
+  proxy_redirect off;
+  proxy_connect_timeout 300;
+  proxy_send_timeout 300;
+  proxy_read_timeout 500;
+  proxy_buffer_size 4k;
+  proxy_buffers 4 32k;
+  proxy_busy_buffers_size 64k;
+  proxy_temp_file_write_size 64k;
+
+  location / {
+    try_files /maintenance.html $uri @app;
+  }
+
+  location ~ ^/api {
+    try_files /maintenance.html $uri @api;
+    access_log /var/log/nginx/gitlab-api.access.log extented;
+  }
+
+  location ~ ^/(assets)/ {
+    root {{ gitlab.application.gitlab.shared_path }};
+    gzip_static on;
+    expires max;
+  }
+
+  location @app{
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-for $remote_addr;
+    proxy_set_header Host $http_host;
+    proxy_pass http://gitlab;
+  }
+
+  location @api{
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-for $remote_addr;
+    proxy_set_header Host $http_host;
+    proxy_pass http://gitlab-api;
+  }
+
+}
