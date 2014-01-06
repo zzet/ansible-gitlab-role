@@ -1,27 +1,27 @@
----
--
-  hosts: all
-  sudo: true
-  vars_prompt:
-    - name: "postgresql_gitlab_user"
-      prompt: "Postgres password for user {{ gitlab.user }}"
-      private: true
-      confirm: true
+#---
+#-
+  #hosts: all
+  #sudo: true
+  #vars_prompt:
+    #- name: "postgresql_gitlab_user"
+      #prompt: "Postgres password for user {{ gitlab.user }}"
+      #private: true
+      #confirm: true
 
-  roles:
-    - role: zzet.rbenv
-      rbenv:
-        env: user
-        version: v.0.4.0 
-        ruby_version: 2.0.0-p247
-        user:
-          - git
-          - gitlab
+  #roles:
+    #- role: zzet.rbenv
+      #rbenv:
+        #env: user
+        #version: v.0.4.0 
+        #ruby_version: 2.0.0-p247
+        #user:
+          #- git
+          #- gitlab
 
-    - role: zzet.postgresql
-    - role: bennojoy.nginx
-      hosts: none
-    - role: bennojoy.redis
-    - role: gitlab
+    #- role: zzet.postgresql
+    #- role: bennojoy.nginx
+      #hosts: none
+    #- role: bennojoy.redis
+    #- role: gitlab
 
 

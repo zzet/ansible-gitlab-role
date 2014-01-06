@@ -12,8 +12,10 @@ galaxy_info:
   categories:
     - development
     - system
+    - web
 dependencies:
-  - zzet.postgresql
+  - zzet.common
   - zzet.rbenv
+  - zzet.postgresql
   - bennojoy.redis
   - bennojoy.nginx

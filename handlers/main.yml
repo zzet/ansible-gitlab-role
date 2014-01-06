@@ -1,2 +1,11 @@
 ---
 # handlers file for gitlab
+- name: restart gitlab
+  command: /usr/bin/sv reload /etc/service/gitlab-*
+  sudo: true
+
+- name: stop gitlab
+  command: /usr/bin/sv stop /etc/service/gitlab-*
+
+- name: start gitlab
+  command: /usr/bin/sv start /etc/service/gitlab-*

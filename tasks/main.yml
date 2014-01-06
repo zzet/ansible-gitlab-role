@@ -1,5 +1,5 @@
 ---
-- name: Gitlab | install dependencies
+- name: install dependencies
   apt: name={{ item }} state=present update_cache=yes cache_valid_time=900
   with_items:
     - build-essential
@@ -23,124 +23,137 @@
   tags:
     - gitlab
 
-  # /var/git
-- name: Gitlab | create {{ gitlab.git_user.comment }}
+- name: "ensgure created {{ item.comment }}"
   user: state=present
-        name={{ gitlab.git_user.name }} comment={{ gitlab.git_user.comment }}
-        home={{ gitlab.git_user.home }} groups={{ gitlab.git_user.groups }}
+        name={{ item.name }} comment="{{ item.comment }}"
+        home={{ item.home }} groups={{ item.groups }}
         generate_ssh_key=yes
+  with_items:
+    - $gitlab_git_user
+    - $gitlab_deploy_user
   tags:
     - gitlab
 
   # /var/git/.ssh
-- name: Gitlab | create {{ gitlab.git_user.comment }} .ssh directory
-  file: state=directory path={{ gitlab.git_user.home }}/.ssh owner={{ gitlab.git_user.name }} group={{ gitlab.git_user.name }} mode=700
-  tags:
-    - gitlab
-
-  # /home/gitlab
-- name: Gitlab | create {{ gitlab.gitlab_user.comment }}
-  user: state=present
-        name={{ gitlab.gitlab_user.name }} comment={{ gitlab.gitlab_user.comment }}
-        home={{ gitlab.gitlab_user.home }} groups={{ gitlab.gitlab_user.groups }}
-        generate_ssh_key=yes
-  tags:
-    - gitlab
-
   # /home/gitlab/.ssh
-- name: Gitlab | create {{ gitlab.gitlab_user.comment }} .ssh directory
-  file: state=directory path={{ gitlab.gitlab_user.home }}/.ssh owner={{ gitlab.gitlab_user.name }} group={{ gitlab.gitlab_user.name }} mode=700
+- name: enshure created {{ item.comment }} .ssh directory
+  file: state=directory path={{ item.home }}/.ssh owner={{ item.name }} group={{ item.name }} mode=700
+  with_items:
+    - $gitlab_git_user
+    - $gitlab_deploy_user
   tags:
     - gitlab
 
   # /home/gitlab/.ssh/authorized_keys
-- name: Gitlab | Upload SSH authorized_keys for {{ gitlab.gitlab_user.comment }}.
-  copy: src=authorized_keys dest={{ gitlab.gitlab_user.home}}/.ssh/authorized_keys owner={{ gitlab.gitlab_user.name }} group={{ gitlab.gitlab_user.name }} mode=0600
+- name: Upload SSH authorized_keys for {{ item.comment }}.
+  copy: src=authorized_keys dest={{ item.home}}/.ssh/authorized_keys owner={{ item.name }} group={{ item.name }} mode=0600
+  with_items:
+    - $gitlab_deploy_user
+  when: not "{{ gitlab_deploy_user.name }}" == "{{ gitlab_git_user.name }}"
   tags:
     - gitlab
 
   # /rest/u/apps/gitlab
-- name: Gitlab | create project directory
-  file: state=directory path={{ gitlab.application.core.path }} owner={{ gitlab.gitlab_user.name }} group={{ gitlab.gitlab_user.name }}
-  tags:
-    - gitlab
-
+  # /rest/u/apps/gitlab/releases
   # /rest/u/apps/gitlab/shared
-- name: Gitlab | create project shared directory
-  file: state=directory path={{ gitlab.application.core.path }}/shared owner={{ gitlab.git_user.name }} group={{ gitlab.gitlab_user.name }}
+  # /rest/u/apps/gitlab/shared/gitlab-satellites
+  # /rest/u/apps/gitlab/shared/uploads
+  # /rest/u/apps/gitlab/log
+  # /rest/u/apps/gitlab/system
+  # /rest/u/apps/gitlab/pids
+- name: create project directory
+  file: state=directory path={{ item.path }} owner={{ item.owner }} group={{ item.group }}
+  with_items:
+    - $gitlab_web_base_dir
+    - $gitlab_web_releases_dir
+    - $gitlab_web_shared_dir
+    - $gitlab_web_satellites_dir
+    - $gitlab_web_uploads_dir
+    - $gitlab_web_log_dir
+    - $gitlab_web_system_dir
+    - $gitlab_web_pids_dir
+    - $gitlab_shell_base_dir
+    - $gitlab_shell_releases_dir
   tags:
     - gitlab
 
-- name: Gitlab | postgresql | ensure user does not have unnecessary privilege ({{ gitlab.application.env }} enviroment)
-  postgresql_user: name={{ gitlab.application.database.user }} password={{ application.database.password }} role_attr_flags=NOSUPERUSER,NOCREATEDB
+- name: postgresql | ensure user does not have unnecessary privilege ({{ gitlab_env }} enviroment)
+  postgresql_user: name={{ item.user }} password={{ item.password }} role_attr_flags={{ item.role_attr_flags }}
   sudo_user: postgres
-  when: {{ gitlab.application.database.adapter }} == "postgresql"
-  enviroment: gitlab.application.env
+  when: not "postgresql" != "{{ item.adapter }}"
+  with_items: gitlab_web_databases
   tags:
     - gitlab
     - postgres
 
-- name: Gitlab | postgresql | ensure {{ gitlab.application.env }} database is created
-  postgresql_db: name={{ gitlab.application.database.name }} owner={{ gitlab.application.database.user }}
-                 encoding={{ gitlab.application.database.encoding }} lc_collate={{ gitlab.application.database.locale }}
-                 lc_ctype={{ gitlab.application.database.locale }} template='template0'
+- name: postgresql | ensure {{ gitlab_env }} database is created
+  postgresql_db: name={{ item.name }} owner={{ item.user }}
+                 encoding={{ item.encoding }} lc_collate={{ item.locale }}
+                 lc_ctype={{ item.locale }} template='template0'
                  state=present
   sudo_user: postgres
-  enviroment: gitlab.application.env
-  when: {{ gitlab.application.database.adapter }} == "postgresql"
+  when: not "postgresql" != "{{ item.adapter }}"
+  with_items: gitlab_web_databases
   tags:
     - gitlab
     - postgres
 
-- name: Gitlab | nginx | update nginx config
-  template: src=nginx.site.conf.j2 dest=/etc/nginx/sites-available/{{ project_name }} mode=0755
+- name: nginx | update nginx config
+  template: src="nginx/{{ gitlab_nginx_conf_tpl }}" dest=/etc/nginx/sites-available/gitlab mode=0755
   sudo: true
-  enviroment: gitlab.application.env
+  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
   tags:
     - gitlab
     - nginx
 
-- name: Gitlab | nginx | enable app
-  file: src=/etc/nginx/sites-available/{{ project_name }} dest=/etc/nginx/sites-enabled/{{ project_name }} state=link
+- name: nginx | enable app
+  file: src=/etc/nginx/sites-available/gitlab dest=/etc/nginx/sites-enabled/gitlab state=link
   sudo: true
+  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
   tags:
     - gitlab
     - nginx
 
-- name: Gitlab | runit | add application {{ item }} script
-  template: src=runit/gitlab.{{ item }}.run.j2 dest=/etc/sv/gitlab-{{ item }}/run
+- name: runit | create application {{ item }} script directory
+  file: state=directory path=/etc/sv/gitlab-{{ item.service }}-{{ item.name }} owner=root group=root mode=755
   sudo: true
-  with_items:
-    - web_puma
-    - web_puma_api
-    - sidekiq_main
-    - sidekiq_mail
-    - sidekiq_shell
+  with_items: gitlab_runit_services
+  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
   tags:
     - gitlab
     - runit
 
-- name: Gitlab | runit | add application {{ item }} log run script
-  template: src=runit/gitlab.{{ item }}.log.run.j2 dest=/etc/sv/gitlab-{{ item }}/log/run
+- name: runit | create application {{ item }} script log directory
+  file: state=directory path=/etc/sv/gitlab-{{ item.service }}-{{ item.name }}/log owner=root group=root mode=755
   sudo: true
-  with_items:
-    - web_puma
-    - web_puma_api
-    - sidekiq_main
-    - sidekiq_mail
-    - sidekiq_shell
+  with_items: gitlab_runit_services
+  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
   tags:
     - gitlab
     - runit
 
-- name: Gitlab | runit | symlink {{ item }} dir to enable runit service
-  file: state=link src=/etc/sv/gitlab-{{ item }} dest=/etc/service/gitlab-{{ itme }}
-  with_items:
-    - web_puma
-    - web_puma_api
-    - sidekiq_main
-    - sidekiq_mail
-    - sidekiq_shell
+- name: runit | add application {{ item }} script
+  template: src=runit/gitlab.{{ item.service }}.run.j2 dest=/etc/sv/gitlab-{{ item.service }}-{{ item.name }}/run mode=755
+  sudo: true
+  with_items: gitlab_runit_services
+  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
+  tags:
+    - gitlab
+    - runit
+
+- name: runit | add application {{ item }} log run script
+  template: src=runit/gitlab.log.run.j2 dest=/etc/sv/gitlab-{{ item.service }}-{{ item.name }}/log/run mode=755
+  sudo: true
+  with_items: gitlab_runit_services
+  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
+  tags:
+    - gitlab
+    - runit
+
+- name: runit | symlink {{ item }} dir to enable runit service
+  file: state=link src=/etc/sv/gitlab-{{ item.service }}-{{ item.name }} dest=/etc/service/gitlab-{{ item.service }}-{{ item.name }}
+  with_items: gitlab_runit_services
+  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
   tags:
     - gitlab
     - runit

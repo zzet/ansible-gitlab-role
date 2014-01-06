@@ -1,0 +1,4 @@
+#!/bin/bash
+LOG_FOLDER=/var/log/gitlab-{{ item.service }}-{{ item.name }}
+mkdir -p $LOG_FOLDER
+exec svlogd -tt $LOG_FOLDER

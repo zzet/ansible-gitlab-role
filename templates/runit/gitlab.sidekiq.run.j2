@@ -5,12 +5,12 @@
 #
 
 # Settings
-APP_ROOT={{ gitlab.application.base_path }}
-APP_USER={{ gitlab.git_user.name }}
-APP_GROUP={{ gitlab.gitlab_user.name }}
-APP_RAILS_ENV='{{ gitlab.application.env }}'
+APP_ROOT={{ gitlab_web_base_dir }}
+APP_USER={{ gitlab_git_user.name }}
+APP_GROUP={{ gitlab_deploy_user.name }}
+APP_RAILS_ENV='{{ gitlab_env }}'
 
-CMD="bundle exec sidekiq -c 10 -q mail_notifications,mailer -e ${APP_RAILS_ENV}"
+CMD="bundle exec sidekiq -c {{ item.concurency }} -q {{ item.queue }} -e ${APP_RAILS_ENV}"
 
 # Set ENV
 export PATH=/usr/local/rbenv/bin:$PATH

@@ -7,10 +7,27 @@ upstream gitlab-api {
 }
 
 server {
-  server_name {% for domain in gitlab_web_domains %} domain {% endfor %};
+  server_name {% for domain in {{ gitlab_web_domains }} %} domain {% endfor %};
   listen 80 default;
   access_log /var/log/nginx/gitlab.access.log;
   error_log /var/log/nginx/gitlab.error.log;
+  location / {
+    rewrite ^ https://{{ gitlab.nginx.server_name }}$uri permanent;
+  }
+}
+
+
+server {
+  listen 443 ssl;
+
+  server_name {% for domain in {{ gitlab_web_domains }} %} domain {% endfor %};
+
+  access_log /var/log/nginx/gitlab.access.log;
+  error_log /var/log/nginx/gitlab.error.log;
+
+  ssl_protocols  SSLv3 TLSv1;
+  ssl_certificate /etc/nginx/ssl/gitlab.pem;
+  ssl_certificate_key /etc/nginx/ssl/gitlab.key;
 
   gzip on;
   gzip_comp_level 9;
