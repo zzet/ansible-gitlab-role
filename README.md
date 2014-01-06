@@ -23,13 +23,12 @@ A list of other roles hosted on Galaxy should go here, plus any details in regar
 License
 -------
 
-BSD
+MIT
 
 Author Information
 ------------------
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
-
+[Andrew Kumanyaev](https://github.com/zzet)
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/zzet/ansible-gitlab-role/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
