@@ -38,11 +38,11 @@ server {
 
   location ~ ^/api {
     try_files /maintenance.html $uri @api;
-    access_log /var/log/nginx/gitlab-api.access.log extented;
+    access_log /var/log/nginx/gitlab-api.access.log;
   }
 
   location ~ ^/(assets)/ {
-    root {{ gitlab_web_shared_dir }};
+    root {{ gitlab_web_shared_dir.path }};
     gzip_static on;
     expires max;
   }

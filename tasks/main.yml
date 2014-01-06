@@ -1,6 +1,10 @@
 ---
+- name: include env vars
+  include_vars: "{{ gitlab_env }}.yml"
+
 - name: install dependencies
   apt: name={{ item }} state=present update_cache=yes cache_valid_time=900
+  sudo: true
   with_items:
     - build-essential
     - zlib1g-dev
@@ -28,6 +32,7 @@
         name={{ item.name }} comment="{{ item.comment }}"
         home={{ item.home }} groups={{ item.groups }}
         generate_ssh_key=yes
+  sudo: true
   with_items:
     - $gitlab_git_user
     - $gitlab_deploy_user
@@ -38,6 +43,7 @@
   # /home/gitlab/.ssh
 - name: enshure created {{ item.comment }} .ssh directory
   file: state=directory path={{ item.home }}/.ssh owner={{ item.name }} group={{ item.name }} mode=700
+  sudo: true
   with_items:
     - $gitlab_git_user
     - $gitlab_deploy_user
@@ -47,6 +53,7 @@
   # /home/gitlab/.ssh/authorized_keys
 - name: Upload SSH authorized_keys for {{ item.comment }}.
   copy: src=authorized_keys dest={{ item.home}}/.ssh/authorized_keys owner={{ item.name }} group={{ item.name }} mode=0600
+  sudo: true
   with_items:
     - $gitlab_deploy_user
   when: not "{{ gitlab_deploy_user.name }}" == "{{ gitlab_git_user.name }}"
@@ -74,11 +81,13 @@
     - $gitlab_web_pids_dir
     - $gitlab_shell_base_dir
     - $gitlab_shell_releases_dir
+  sudo: true
   tags:
     - gitlab
 
 - name: postgresql | ensure user does not have unnecessary privilege ({{ gitlab_env }} enviroment)
   postgresql_user: name={{ item.user }} password={{ item.password }} role_attr_flags={{ item.role_attr_flags }}
+  sudo: true
   sudo_user: postgres
   when: not "postgresql" != "{{ item.adapter }}"
   with_items: gitlab_web_databases
@@ -91,6 +100,7 @@
                  encoding={{ item.encoding }} lc_collate={{ item.locale }}
                  lc_ctype={{ item.locale }} template='template0'
                  state=present
+  sudo: true
   sudo_user: postgres
   when: not "postgresql" != "{{ item.adapter }}"
   with_items: gitlab_web_databases
@@ -152,6 +162,7 @@
 
 - name: runit | symlink {{ item }} dir to enable runit service
   file: state=link src=/etc/sv/gitlab-{{ item.service }}-{{ item.name }} dest=/etc/service/gitlab-{{ item.service }}-{{ item.name }}
+  sudo: true
   with_items: gitlab_runit_services
   when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
   tags:

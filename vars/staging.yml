@@ -1,0 +1,24 @@
+---
+gitlab_env:         staging
+gitlab_server:      puma
+
+gitlab_web_repo:    "git://github.com/Undev/gitlabhq.git"
+gitlab_web_branch:  'staging'
+gitlab_web_version: '6.4'
+gitlab_web_domains: ["gitlab.staging.host"]
+
+gitlab_web_databases:
+  - { adapter: postgresql,
+      user: gitlab,
+      password: '',
+      name: gitlab_staging,
+      role_attr_flags: 'NOSUPERUSER,CREATEDB',
+      locale: "en_US.UTF-8",
+      encoding: "UTF-8" }
+
+gitlab_runit_services:
+  - { service: sidekiq,               name: main,   queue: "post_receive,build_result,project_web_hook,system_hook,common,default", concurency: 2 }
+  - { service: sidekiq,               name: mail,   queue: "mail_notifications,mailer", concurency: 3 }
+  - { service: sidekiq,               name: shell,  queue: "gitlab_shell", concurency: 2 }
+  - { service: "{{ gitlab_server }}", name: web,    port: "{{ gitlab_web_web_port }}", workers: 3, backlog: 1000 }
+  - { service: "{{ gitlab_server }}", name: api,    port: "{{ gitlab_web_api_port }}", workers: 2, backlog: 1000 }

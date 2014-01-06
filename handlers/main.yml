@@ -6,6 +6,8 @@
 
 - name: stop gitlab
   command: /usr/bin/sv stop /etc/service/gitlab-*
+  sudo: true
 
 - name: start gitlab
   command: /usr/bin/sv start /etc/service/gitlab-*
+  sudo: true

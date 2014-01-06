@@ -1,0 +1,22 @@
+---
+gitlab_env:         development
+
+gitlab_web_repo:    "git://github.com/Undev/gitlabhq.git"
+gitlab_web_branch:  'develop'
+gitlab_web_version: '6.4'
+
+gitlab_web_databases:
+  - { adapter: postgresql,
+      user: gitlab,
+      password: '',
+      name: gitlab_development,
+      role_attr_flags: 'NOSUPERUSER,CREATEDB',
+      locale: "en_US.UTF-8",
+      encoding: "UTF-8" }
+  - { adapter: postgresql,
+      user: gitlab,
+      password: '',
+      name: gitlab_test,
+      role_attr_flags: 'NOSUPERUSER,CREATEDB',
+      locale: "en_US.UTF-8",
+      encoding: "UTF-8" }
