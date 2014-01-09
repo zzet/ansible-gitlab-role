@@ -1,0 +1,26 @@
+---
+  # /home/git/gitlab
+  # /home/git/gitlab/releases
+  # /home/git/gitlab/shared
+  # /home/git/gitlab/shared/gitlab-satellites
+  # /home/git/gitlab/shared/uploads
+  # /home/git/gitlab/log
+  # /home/git/gitlab/system
+  # /home/git/gitlab/pids
+- name: create project directory
+  file: state=directory path={{ item.path }} owner={{ item.owner }} group={{ item.group }}
+  with_items:
+    - $gitlab_web_base_dir
+    - $gitlab_web_releases_dir
+    - $gitlab_web_shared_dir
+    - $gitlab_web_satellites_dir
+    - $gitlab_web_uploads_dir
+    - $gitlab_web_log_dir
+    - $gitlab_web_system_dir
+    - $gitlab_web_pids_dir
+    - $gitlab_shell_base_dir
+    - $gitlab_shell_releases_dir
+  sudo: true
+  tags:
+    - gitlab
+

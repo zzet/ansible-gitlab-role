@@ -1,170 +1,29 @@
 ---
-- name: include env vars
-  include_vars: "{{ gitlab_env }}.yml"
+- name: include env global vars
+  include_vars:
+    "{{ gitlab_type }}.yml"
 
-- name: install dependencies
-  apt: name={{ item }} state=present update_cache=yes cache_valid_time=900
-  sudo: true
-  with_items:
-    - build-essential
-    - zlib1g-dev
-    - libyaml-dev
-    - libssl-dev
-    - libgdbm-dev
-    - libreadline-dev
-    - libncurses5-dev
-    - libffi-dev
-    - curl
-    - git-core
-    - openssh-server
-    - checkinstall
-    - libxml2-dev
-    - libxslt1-dev
-    - libcurl4-openssl-dev
-    - libicu-dev
-    - python
-    - openssl
-  tags:
-    - gitlab
+- name: include env spec vars
+  include_vars:
+    "{{ gitlab_env }}-{{ gitlab_type }}.yml"
 
-- name: "ensgure created {{ item.comment }}"
-  user: state=present
-        name={{ item.name }} comment="{{ item.comment }}"
-        home={{ item.home }} groups={{ item.groups }}
-        generate_ssh_key=yes
-  sudo: true
-  with_items:
-    - $gitlab_git_user
-    - $gitlab_deploy_user
-  tags:
-    - gitlab
+- name: run common steps
+  include: common.yml
 
-  # /var/git/.ssh
-  # /home/gitlab/.ssh
-- name: enshure created {{ item.comment }} .ssh directory
-  file: state=directory path={{ item.home }}/.ssh owner={{ item.name }} group={{ item.name }} mode=700
-  sudo: true
-  with_items:
-    - $gitlab_git_user
-    - $gitlab_deploy_user
-  tags:
-    - gitlab
+- name: include gitlabhq tasks
+  include: gitlabhq.yml
+  when: not "{{ gitlab_type }}" != "gitlabhq"
 
-  # /home/gitlab/.ssh/authorized_keys
-- name: Upload SSH authorized_keys for {{ item.comment }}.
-  copy: src=authorized_keys dest={{ item.home}}/.ssh/authorized_keys owner={{ item.name }} group={{ item.name }} mode=0600
-  sudo: true
-  with_items:
-    - $gitlab_deploy_user
-  when: not "{{ gitlab_deploy_user.name }}" == "{{ gitlab_git_user.name }}"
-  tags:
-    - gitlab
+- name: include upstream tasks
+  include: undev.yml
+  when: not "{{ gitlab_type }}" != "undev"
 
-  # /rest/u/apps/gitlab
-  # /rest/u/apps/gitlab/releases
-  # /rest/u/apps/gitlab/shared
-  # /rest/u/apps/gitlab/shared/gitlab-satellites
-  # /rest/u/apps/gitlab/shared/uploads
-  # /rest/u/apps/gitlab/log
-  # /rest/u/apps/gitlab/system
-  # /rest/u/apps/gitlab/pids
-- name: create project directory
-  file: state=directory path={{ item.path }} owner={{ item.owner }} group={{ item.group }}
-  with_items:
-    - $gitlab_web_base_dir
-    - $gitlab_web_releases_dir
-    - $gitlab_web_shared_dir
-    - $gitlab_web_satellites_dir
-    - $gitlab_web_uploads_dir
-    - $gitlab_web_log_dir
-    - $gitlab_web_system_dir
-    - $gitlab_web_pids_dir
-    - $gitlab_shell_base_dir
-    - $gitlab_shell_releases_dir
-  sudo: true
-  tags:
-    - gitlab
+- name: run db setup
+  include: databases.yml
 
-- name: postgresql | ensure user does not have unnecessary privilege ({{ gitlab_env }} enviroment)
-  postgresql_user: name={{ item.user }} password={{ item.password }} role_attr_flags={{ item.role_attr_flags }}
-  sudo: true
-  sudo_user: postgres
-  when: not "postgresql" != "{{ item.adapter }}"
-  with_items: gitlab_web_databases
-  tags:
-    - gitlab
-    - postgres
+- name: run nginx configure
+  include: nginx.yml
 
-- name: postgresql | ensure {{ gitlab_env }} database is created
-  postgresql_db: name={{ item.name }} owner={{ item.user }}
-                 encoding={{ item.encoding }} lc_collate={{ item.locale }}
-                 lc_ctype={{ item.locale }} template='template0'
-                 state=present
-  sudo: true
-  sudo_user: postgres
-  when: not "postgresql" != "{{ item.adapter }}"
-  with_items: gitlab_web_databases
-  tags:
-    - gitlab
-    - postgres
-
-- name: nginx | update nginx config
-  template: src="nginx/{{ gitlab_nginx_conf_tpl }}" dest=/etc/nginx/sites-available/gitlab mode=0755
-  sudo: true
-  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
-  tags:
-    - gitlab
-    - nginx
-
-- name: nginx | enable app
-  file: src=/etc/nginx/sites-available/gitlab dest=/etc/nginx/sites-enabled/gitlab state=link
-  sudo: true
-  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
-  tags:
-    - gitlab
-    - nginx
-
-- name: runit | create application {{ item }} script directory
-  file: state=directory path=/etc/sv/gitlab-{{ item.service }}-{{ item.name }} owner=root group=root mode=755
-  sudo: true
-  with_items: gitlab_runit_services
-  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
-  tags:
-    - gitlab
-    - runit
-
-- name: runit | create application {{ item }} script log directory
-  file: state=directory path=/etc/sv/gitlab-{{ item.service }}-{{ item.name }}/log owner=root group=root mode=755
-  sudo: true
-  with_items: gitlab_runit_services
-  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
-  tags:
-    - gitlab
-    - runit
-
-- name: runit | add application {{ item }} script
-  template: src=runit/gitlab.{{ item.service }}.run.j2 dest=/etc/sv/gitlab-{{ item.service }}-{{ item.name }}/run mode=755
-  sudo: true
-  with_items: gitlab_runit_services
-  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
-  tags:
-    - gitlab
-    - runit
-
-- name: runit | add application {{ item }} log run script
-  template: src=runit/gitlab.log.run.j2 dest=/etc/sv/gitlab-{{ item.service }}-{{ item.name }}/log/run mode=755
-  sudo: true
-  with_items: gitlab_runit_services
-  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
-  tags:
-    - gitlab
-    - runit
-
-- name: runit | symlink {{ item }} dir to enable runit service
-  file: state=link src=/etc/sv/gitlab-{{ item.service }}-{{ item.name }} dest=/etc/service/gitlab-{{ item.service }}-{{ item.name }}
-  sudo: true
-  with_items: gitlab_runit_services
-  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
-  tags:
-    - gitlab
-    - runit
+- name: run runit steps
+  include: runit.yml
+  when: not "{{ gitlab_type }}" != "undev"

@@ -1,9 +1,4 @@
 ---
-gitlab_type:            undev
-gitlab_env:             production
-gitlab_ssl_enabled:     false
-gitlab_nginx_conf_tpl:  "{% if gitlab_ssl_enabled %}site.conf_with_ssl.j2{% else %}site.conf.j2{% endif %}"
-gitlab_directory:       "{{ projects_directory }}"
 gitlab_server:          puma
 
 gitlab_git_user:    { name: git,     home: /var/git,       groups: 'git,gitlab',          comment: "Gitlab git and run user" }

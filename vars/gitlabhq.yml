@@ -1,0 +1,35 @@
+---
+gitlab_server:      unicorn
+gitlab_directory:   "/home/git"
+
+gitlab_git_user:    { name: git,     home: /home/git,       groups: 'git',          comment: "Gitlab git and run user" }
+
+gitlab_web_repo:    "git://github.com/gitlabhq/gitlabhq.git"
+gitlab_web_branch:  'master'
+gitlab_web_version: 'v6.4.3'
+gitlab_web_domains: ["gitlab.production.host"]
+
+gitlab_web_databases:
+  - { adapter: postgresql,
+      user: gitlab,
+      password: '',
+      name: gitlab_production,
+      role_attr_flags: 'NOSUPERUSER,NOCREATEDB',
+      locale: "en_US.UTF-8",
+      encoding: "UTF-8" }
+
+gitlab_web_base_dir:       { path: "{{ gitlab_directory }}/gitlab",                      owner: "{{ gitlab_git_user.name }}",        group: "{{ gitlab_git_user.name }}" }
+gitlab_web_shared_dir:     { path: "{{ gitlab_web_base_dir.path }}/public",                 owner: "{{ gitlab_git_user.name }}",        group: "{{ gitlab_git_user.name }}" }
+gitlab_web_uploads_dir:    { path: "{{ gitlab_web_shared_dir.path }}/uploads",           owner: "{{ gitlab_web_shared_dir.owner }}", group: "{{ gitlab_web_shared_dir.group }}" }
+gitlab_web_system_dir:     { path: "{{ gitlab_web_shared_dir.path }}/system",            owner: "{{ gitlab_web_shared_dir.owner }}", group: "{{ gitlab_web_shared_dir.group }}" }
+gitlab_web_log_dir:        { path: "{{ gitlab_directory }}/log",                         owner: "{{ gitlab_web_shared_dir.owner }}", group: "{{ gitlab_web_shared_dir.group }}" }
+gitlab_web_tmp_dir:        { path: "{{ gitlab_directory }}/tmp",                         owner: "{{ gitlab_web_shared_dir.owner }}", group: "{{ gitlab_web_shared_dir.group }}" }
+gitlab_web_satellites_dir: { path: "{{ gitlab_directory }}/gitlab-satellites", owner: "{{ gitlab_web_shared_dir.owner }}", group: "{{ gitlab_web_shared_dir.group }}" }
+gitlab_web_pids_dir:       { path: "{{ gitlab_web_tmp_dir.path }}/pids",              owner: "{{ gitlab_web_shared_dir.owner }}", group: "{{ gitlab_web_shared_dir.group }}" }
+gitlab_web_run_path_dir:   "{{ gitlab_web_base_dir.path }}"
+
+gitlab_web_web_port:       9000
+gitlab_web_api_port:       9001
+
+gitlab_shell_base_dir:     { path: "{{ gitlab_directory }}/gitlab-shell",               owner: "{{ gitlab_git_user.name }}",        group: "{{ gitlab_git_user.name }}" }
+gitlab_shell_run_path_dir: "{{ gitlab_shell_base_dir.path }}"

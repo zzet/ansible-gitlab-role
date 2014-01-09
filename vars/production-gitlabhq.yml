@@ -1,0 +1,9 @@
+---
+gitlab_web_databases:
+  - { adapter: postgresql,
+      user: git,
+      password: '',
+      name: gitlabhq_production,
+      role_attr_flags: 'NOSUPERUSER,NOCREATEDB',
+      locale: "en_US.UTF-8",
+      encoding: "UTF-8" }

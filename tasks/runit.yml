@@ -1,0 +1,45 @@
+---
+- name: runit | create application {{ item }} script directory
+  file: state=directory path=/etc/sv/gitlab-{{ item.service }}-{{ item.name }} owner=root group=root mode=755
+  sudo: true
+  with_items: gitlab_runit_services
+  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
+  tags:
+    - gitlab
+    - runit
+
+- name: runit | create application {{ item }} script log directory
+  file: state=directory path=/etc/sv/gitlab-{{ item.service }}-{{ item.name }}/log owner=root group=root mode=755
+  sudo: true
+  with_items: gitlab_runit_services
+  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
+  tags:
+    - gitlab
+    - runit
+
+- name: runit | add application {{ item }} script
+  template: src=runit/gitlab.{{ item.service }}.run.j2 dest=/etc/sv/gitlab-{{ item.service }}-{{ item.name }}/run mode=755
+  sudo: true
+  with_items: gitlab_runit_services
+  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
+  tags:
+    - gitlab
+    - runit
+
+- name: runit | add application {{ item }} log run script
+  template: src=runit/gitlab.log.run.j2 dest=/etc/sv/gitlab-{{ item.service }}-{{ item.name }}/log/run mode=755
+  sudo: true
+  with_items: gitlab_runit_services
+  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
+  tags:
+    - gitlab
+    - runit
+
+- name: runit | symlink {{ item }} dir to enable runit service
+  file: state=link src=/etc/sv/gitlab-{{ item.service }}-{{ item.name }} dest=/etc/service/gitlab-{{ item.service }}-{{ item.name }}
+  sudo: true
+  with_items: gitlab_runit_services
+  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
+  tags:
+    - gitlab
+    - runit

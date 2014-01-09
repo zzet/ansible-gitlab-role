@@ -1,0 +1,18 @@
+---
+- name: nginx | update nginx config
+  template: src="nginx/{{ gitlab_nginx_conf_tpl }}" dest=/etc/nginx/sites-available/gitlab mode=0755
+  sudo: true
+  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
+  tags:
+    - gitlab
+    - nginx
+
+- name: nginx | enable app
+  file: src=/etc/nginx/sites-available/gitlab dest=/etc/nginx/sites-enabled/gitlab state=link
+  sudo: true
+  when: (not "{{ gitlab_env }}" == "development") and (not "{{ gitlab_env }}" == "test")
+  tags:
+    - gitlab
+    - nginx
+
+

@@ -1,0 +1,25 @@
+---
+- name: postgresql | ensure user does not have unnecessary privilege ({{ gitlab_env }} enviroment)
+  postgresql_user: name={{ item.user }} password={{ item.password }} role_attr_flags={{ item.role_attr_flags }}
+  sudo: true
+  sudo_user: postgres
+  when: not "postgresql" != "{{ item.adapter }}"
+  with_items: gitlab_web_databases
+  tags:
+    - gitlab
+    - postgres
+
+- name: postgresql | ensure {{ gitlab_env }} database is created
+  postgresql_db: name={{ item.name }} owner={{ item.user }}
+                 encoding={{ item.encoding }} lc_collate={{ item.locale }}
+                 lc_ctype={{ item.locale }} template='template0'
+                 state=present
+  sudo: true
+  sudo_user: postgres
+  when: not "postgresql" != "{{ item.adapter }}"
+  with_items: gitlab_web_databases
+  tags:
+    - gitlab
+    - postgres
+
+
