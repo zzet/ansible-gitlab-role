@@ -7,7 +7,7 @@
   # /home/git/gitlab/log
   # /home/git/gitlab/system
   # /home/git/gitlab/pids
-- name: create project directory
+- name: create project directories
   file: state=directory path={{ item.path }} owner={{ item.owner }} group={{ item.group }}
   with_items:
     - $gitlab_web_base_dir

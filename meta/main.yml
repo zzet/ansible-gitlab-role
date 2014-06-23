@@ -17,6 +17,7 @@ dependencies:
   - zzet.common
   - zzet.rbenv
   - zzet.postgresql
+  - kunik.elasticsearch
   - bennojoy.redis
   - bennojoy.nginx
   - zzet.runit

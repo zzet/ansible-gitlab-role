@@ -1,0 +1,54 @@
+---
+- name: "enshure created {{ gitlab_deploy_user.comment }}"
+  user: state=present
+        name={{ gitlab_deploy_user.name }} comment="{{ gitlab_deploy_user.comment }}"
+        home={{ gitlab_deploy_user.home }} groups={{ gitlab_deploy_user.groups }}
+        generate_ssh_key=yes
+  sudo: true
+  tags:
+    - gitlab
+
+  # /var/git/.ssh
+  # /home/gitlab/.ssh
+- name: enshure created {{ gitlab_deploy_user.comment }} .ssh directory
+  file: state=directory path={{ gitlab_deploy_user.home }}/.ssh mode=700
+        owner={{ gitlab_deploy_user.name }} group={{ gitlab_deploy_user.name }}
+  sudo: true
+  tags:
+    - gitlab
+
+  # /home/gitlab/.ssh/authorized_keys
+- name: Upload SSH authorized_keys for {{ gitlab_deploy_user.comment }}.
+  copy: src=authorized_keys
+        dest={{ gitlab_deploy_user.home}}/.ssh/authorized_keys
+        owner={{ gitlab_deploy_user.name }}
+        group={{ gitlab_deploy_user.name }} mode=0600
+  sudo: true
+  when: not "{{ gitlab_deploy_user.name }}" == "{{ gitlab_git_user.name }}"
+  tags:
+    - gitlab
+
+  # /rest/u/apps/gitlab
+  # /rest/u/apps/gitlab/releases
+  # /rest/u/apps/gitlab/shared
+  # /rest/u/apps/gitlab/shared/gitlab-satellites
+  # /rest/u/apps/gitlab/shared/uploads
+  # /rest/u/apps/gitlab/log
+  # /rest/u/apps/gitlab/system
+  # /rest/u/apps/gitlab/pids
+- name: create project directory
+  file: state=directory path={{ item.path }} owner={{ item.owner }} group={{ item.group }}
+  with_items:
+    - "{{ gitlab_web_base_dir }}"
+    - "{{ gitlab_web_releases_dir }}"
+    - "{{ gitlab_web_shared_dir }}"
+    - "{{ gitlab_web_satellites_dir }}"
+    - "{{ gitlab_web_uploads_dir }}"
+    - "{{ gitlab_web_log_dir }}"
+    - "{{ gitlab_web_system_dir }}"
+    - "{{ gitlab_web_pids_dir }}"
+    - "{{ gitlab_shell_base_dir }}"
+    - "{{ gitlab_shell_releases_dir }}"
+  sudo: true
+  tags:
+    - gitlab

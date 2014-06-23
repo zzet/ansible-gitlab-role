@@ -1,0 +1,29 @@
+---
+- name: install dependencies
+  apt: name={{ item }} state=present update_cache=yes cache_valid_time=900
+  sudo: true
+  with_items:
+    - build-essential
+    - zlib1g-dev
+    - libyaml-dev
+    - libssl-dev
+    - libgdbm-dev
+    - libreadline-dev
+    - libncurses5-dev
+    - libffi-dev
+    - curl
+    - git-core
+    - openssh-server
+    - checkinstall
+    - libxml2-dev
+    - libxslt1-dev
+    - libcurl4-openssl-dev
+    - libicu-dev
+    - python
+    - openssl
+  tags:
+    - gitlab
+
+- name: ensure /usr/local/bin/python2 links to /usr/bin/python
+  file: state=link src=/usr/bin/python path=/usr/local/bin/python2
+  sudo: true

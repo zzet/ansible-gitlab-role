@@ -7,6 +7,9 @@
   include_vars:
     "{{ gitlab_env }}-{{ gitlab_type }}.yml"
 
+- name: Install packages
+  include: packages.yml
+
 - name: run common steps
   include: common.yml
 
@@ -15,7 +18,7 @@
   when: not "{{ gitlab_type }}" != "gitlabhq"
 
 - name: include upstream tasks
-  include: undev.yml
+  include: gitlab-undev.yml
   when: not "{{ gitlab_type }}" != "undev"
 
 - name: run db setup

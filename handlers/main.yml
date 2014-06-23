@@ -1,7 +1,7 @@
 ---
 # handlers file for gitlab
 - name: restart gitlab
-  command: /usr/bin/sv reload /etc/service/gitlab-*
+  command: /usr/bin/sv restart /etc/service/gitlab-*
   sudo: true
 
 - name: stop gitlab

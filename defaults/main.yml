@@ -6,12 +6,14 @@ gitlab_nginx_conf_tpl:  "{% if gitlab_ssl_enabled %}site.conf_with_ssl.j2{% else
 gitlab_directory:       "{{ projects_directory }}"
 gitlab_server:          puma
 
-gitlab_git_user:    { name: git,     home: /var/git,       groups: 'git,gitlab',          comment: "Gitlab git and run user" }
-gitlab_deploy_user: { name: gitlab,  home: /home/gitlab,   groups: 'git,gitlab',          comment: "Gitlab deploy user" }
+gitlab_git_user:
+  - { name: git,     home: /var/git,       groups: 'git,gitlab',          comment: "Gitlab git and run user" }
+gitlab_deploy_user:
+  - { name: gitlab,  home: /home/gitlab,   groups: 'git,gitlab',          comment: "Gitlab deploy user" }
 
 gitlab_web_repo:    "git://github.com/Undev/gitlabhq.git"
 gitlab_web_branch:  'master'
-gitlab_web_version: '6.4'
+gitlab_web_version: '7.0'
 gitlab_web_domains: ["gitlab.production.host"]
 
 gitlab_web_databases:
@@ -34,14 +36,17 @@ gitlab_web_pids_dir:       { path: "{{ gitlab_web_shared_dir.path }}/pids",     
 gitlab_web_run_path_dir:   "{{ gitlab_web_base_dir.path }}/current"
 gitlab_web_web_port:       9000
 gitlab_web_api_port:       9001
+gitlab_web_faye_port:      4443
 
 gitlab_shell_base_dir:     { path: "{{ gitlab_directory }}/gitlab-shell",               owner: "{{ gitlab_git_user.name }}",        group: "{{ gitlab_git_user.name }}" }
 gitlab_shell_releases_dir: { path: "{{ gitlab_shell_base_dir.path }}/releases",         owner: "{{ gitlab_shell_base_dir.owner }}", group: "{{ gitlab_shell_base_dir.group }}" }
 gitlab_shell_run_path_dir: "{{ gitlab_shell_base_dir.path }}/current"
 
 gitlab_runit_services:
-  - { service: sidekiq,               name: main,   queue: "post_receive,build_result,project_web_hook,system_hook,common,default", concurency: 5 }
-  - { service: sidekiq,               name: mail,   queue: "mail_notifications,mailer", concurency: 10 }
-  - { service: sidekiq,               name: shell,  queue: "gitlab_shell", concurency: 3 }
-  - { service: "{{ gitlab_server }}", name: web,    port: "{{ gitlab_web_web_port }}", workers: 3, backlog: 1000 }
-  - { service: "{{ gitlab_server }}", name: api,    port: "{{ gitlab_web_api_port }}", workers: 3, backlog: 1000 }
+  - { service: sidekiq,               name: main,           queue: "-q post_receive -q build_result -q project_web_hook -q system_hook -q common -q default", concurency: 5 }
+  - { service: sidekiq,               name: mail,           queue: "-q mail_notifications -q mailer", concurency: 10 }
+  - { service: sidekiq,               name: shell,          queue: "-q gitlab_shell", concurency: 3 }
+  - { service: sidekiq,               name: elasticsearch,  queue: "-q elasticsearch", concurency: 3 }
+  - { service: "{{ gitlab_server }}", name: web,            port: "{{ gitlab_web_web_port }}", workers: 3, backlog: 1000 }
+  - { service: "{{ gitlab_server }}", name: api,            port: "{{ gitlab_web_api_port }}", workers: 3, backlog: 1000 }
+  - { service: faye,                  name: faye,           port: "{{ gitlab_web_faye_port }}", backlog: 1000 }

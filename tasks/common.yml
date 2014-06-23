@@ -1,45 +1,18 @@
 ---
-- name: install dependencies
-  apt: name={{ item }} state=present update_cache=yes cache_valid_time=900
-  sudo: true
-  with_items:
-    - build-essential
-    - zlib1g-dev
-    - libyaml-dev
-    - libssl-dev
-    - libgdbm-dev
-    - libreadline-dev
-    - libncurses5-dev
-    - libffi-dev
-    - curl
-    - git-core
-    - openssh-server
-    - checkinstall
-    - libxml2-dev
-    - libxslt1-dev
-    - libcurl4-openssl-dev
-    - libicu-dev
-    - python
-    - openssl
-  tags:
-    - gitlab
-
-- name: "enshure created {{ item.comment }}"
+- name: "enshure created {{ gitlab_git_user.comment }}"
   user: state=present
-        name={{ item.name }} comment="{{ item.comment }}"
-        home={{ item.home }} groups={{ item.groups }}
+        name={{ gitlab_git_user.name }} comment="{{ gitlab_git_user.comment }}"
+        home={{ gitlab_git_user.home }} groups={{ gitlab_git_user.groups }}
         generate_ssh_key=yes
   sudo: true
-  with_items:
-    - $gitlab_git_user
   tags:
     - gitlab
 
   # /var/git/.ssh
-- name: enshure created {{ item.comment }} .ssh directory
-  file: state=directory path={{ item.home }}/.ssh owner={{ item.name }} group={{ item.name }} mode=700
+- name: enshure created {{ gitlab_git_user.comment }} .ssh directory
+  file: state=directory
+        path={{ gitlab_git_user.home }}/.ssh mode=700
+        owner={{ gitlab_git_user.name }} group={{ gitlab_git_user.name }}
   sudo: true
-  with_items:
-    - $gitlab_git_user
   tags:
     - gitlab
