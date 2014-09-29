@@ -18,6 +18,6 @@ dependencies:
   - zzet.rbenv
   - zzet.postgresql
   - kunik.elasticsearch
-  - bennojoy.redis
-  - bennojoy.nginx
+  - { role: bennojoy.redis, sudo: true }
+  - { role: bennojoy.nginx, sudo: true }
   - zzet.runit
