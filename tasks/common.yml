@@ -3,7 +3,7 @@
   user: state=present
         name={{ gitlab_git_user.name }} comment="{{ gitlab_git_user.comment }}"
         home={{ gitlab_git_user.home }} groups={{ gitlab_git_user.groups }}
-        generate_ssh_key=yes
+        generate_ssh_key=yes shell=/bin/bash
   sudo: true
   tags:
     - gitlab
