@@ -16,3 +16,6 @@
   sudo: true
   tags:
     - gitlab
+
+- name: enshure cd present in .bashrc
+  lineinfile: dest={{ gitlab_git_user.home}}/.bashrc line="cd /rest/u/apps/gitlab/current"
