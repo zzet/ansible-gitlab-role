@@ -21,6 +21,7 @@
     - libicu-dev
     - python
     - openssl
+    - cmake
   tags:
     - gitlab
 
