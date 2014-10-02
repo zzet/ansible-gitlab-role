@@ -19,4 +19,5 @@
 
 - name: enshure cd present in .bashrc
   sudo: true
+  sudo_user: {{ gitlab_git_user.name }}
   lineinfile: dest={{ gitlab_git_user.home}}/.bashrc line="cd /rest/u/apps/gitlab/current"
