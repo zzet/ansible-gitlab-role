@@ -20,4 +20,5 @@ dependencies:
   - kunik.elasticsearch
   - { role: bennojoy.redis, sudo: true }
   - { role: bennojoy.nginx, sudo: true }
+  - nicolai86.phantomjs
   - zzet.runit
